@@ -72,8 +72,24 @@ export default function App() {
         if (!d.bankName) newErrors.bankName = "Required";
         if (!d.bankAddress) newErrors.bankAddress = "Required";
       }
-      // Strict IBAN/SWIFT check based on logic prompt
-      if (d.paymentMethod === 'bank_sepa' && !d.iban) newErrors.iban = "IBAN is required for SEPA";
+      
+      // Strict IBAN check for SEPA
+      if (d.paymentMethod === 'bank_sepa') {
+         if (!d.iban) {
+            newErrors.iban = "IBAN is required for SEPA";
+         } else {
+            const cleanIban = d.iban.replace(/\s+/g, '').toUpperCase();
+            // IBAN Regex: 2 letters (country), 2 digits (checksum), followed by alphanumeric
+            const ibanRegex = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4,}$/;
+            
+            if (!ibanRegex.test(cleanIban)) {
+               newErrors.iban = "Invalid IBAN format. Must start with 2-letter country code (e.g., DE, FR).";
+            } else if (cleanIban.length < 15 || cleanIban.length > 34) {
+               newErrors.iban = "Invalid IBAN length.";
+            }
+         }
+      }
+
       if (d.paymentMethod === 'bank_swift') {
          if (!d.swift) newErrors.swift = "SWIFT code is required";
          if (!d.iban) newErrors.iban = "Account number is required";
