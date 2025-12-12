@@ -11,7 +11,8 @@ import {
 } from './components/FormSteps';
 import { Button } from './components/UI';
 import { INITIAL_DATA, FormData } from './types';
-import { ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2, AlertCircle } from 'lucide-react';
+import { submitApplication } from './services/firebase';
 
 const STEPS = [
   'Welcome',
@@ -29,6 +30,7 @@ export default function App() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Scroll to top on step change
   useEffect(() => {
@@ -121,10 +123,17 @@ export default function App() {
   const handleSubmit = async () => {
     if (validateStep(currentStep)) {
       setIsSubmitting(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setIsSubmitting(false);
-      setIsSuccess(true);
+      setSubmitError(null);
+      
+      try {
+        await submitApplication(formData);
+        setIsSuccess(true);
+      } catch (error: any) {
+        console.error("Submission error:", error);
+        setSubmitError(error.message || "Failed to submit application. Please try again later.");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -177,6 +186,13 @@ export default function App() {
           {currentStep === 5 && <ProgramStep data={formData} updateData={updateData} errors={errors} />}
           {currentStep === 6 && <LegalStep data={formData} updateData={updateData} errors={errors} />}
           
+          {submitError && (
+            <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start gap-2 animate-fadeIn">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <p>{submitError}</p>
+            </div>
+          )}
+
           {/* Navigation */}
           {currentStep > 0 && (
              <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center">
